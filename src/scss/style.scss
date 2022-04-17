@@ -1,0 +1,134 @@
+@import "./style_reset.scss";
+
+$primary_color: #1668B2;
+$dark: #000;
+$light: #fff;
+
+* {
+    font-family: "Roboto", sans-serif;
+}
+
+.button {
+    font-size: 16px;
+    padding: 10px 44px;
+    background: $primary_color;
+    color: $light;
+    border-radius: 4px;
+}
+
+.container {
+    padding-inline: 33px;
+    margin: 0 auto;
+}
+
+.navigation{
+    margin-bottom: 70px;
+    &_list {
+        display: flex;
+        gap: 10px;
+    }
+
+    &_item {
+        font-family: 'Noize Sport Free Vertion', sans-serif;
+        text-transform: uppercase;
+        font-size: 16px;
+        background: $primary_color;
+        color: $light;
+        padding: 14px 49px;
+        white-space: nowrap;
+
+        &:first-child {
+            padding-left: 0;
+            position: relative;
+
+            &::before {
+                content: "";
+                display: block;
+                background: $primary_color;
+                height: 100%;
+                width: 100%;
+                position: absolute;
+                left: -100%;
+                top: 0;
+            }
+        }
+    }
+}
+
+.main {
+    .spinners {
+        display: flex;
+        justify-content: space-between;
+        gap: 40px;
+        margin-bottom: 23px;
+        .spinner {
+            width: 100%;
+            border: $dark 1px solid;
+            border-radius: 2px;
+            position: relative;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: 700;
+            
+
+            &::after{
+                content: "";
+                display: inline-block;
+                position: absolute;
+                top: 6px;
+                right: 10px;
+                width: 20px;
+                height: 20px;
+                border: solid $dark;
+                border-width: 0 2px 2px 0;
+                transform: rotate( 45deg);    
+            }
+        }
+    }
+    .fieldes {
+        display: flex;        
+        flex-wrap: nowrap;
+        gap: 40px;
+        
+        .field {
+            border: 1px solid $dark;
+            border-radius: 10px;
+            display: flex;
+            flex-wrap: wrap;
+                box-sizing: border-box;
+            // flex: 1;
+            &_head {
+                display: flex;
+                flex-basis: 100%;
+                height: 35px;
+                justify-content: space-between;
+                align-items: center;
+                padding: 21px;
+                border-bottom: 1px solid $dark;
+                &-info {
+                    text-transform: uppercase;
+                }
+            }
+
+            &_row-counter {
+                flex-basis: 20px;
+                border-right: 1px solid $dark;
+            }
+
+            textarea {
+                flex: 1 1 auto;
+                border: none;
+                resize: vertical;
+                background: yellow;
+                box-sizing: border-box;
+                height: 100%;
+                min-height: 500px;
+            }
+        }
+    }
+}
+
+
+.about {
+
+}

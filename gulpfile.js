@@ -50,8 +50,9 @@ gulp.task("js", async () =>
     .src(js_files)
     .pipe(
       babel({
-        presets: ["@babel/env"],
-        ignore: [ "./src/js/particles.min.js" ]
+        // presets: ["@babel/env", {modules: false }],
+        // ignore: [ "./src/js/particles.min.js" ],
+        // plugins: [['@babel/transform-runtime', { regenerator: true }]]
       })
     )
     .pipe(gulp.dest("./static/js"))

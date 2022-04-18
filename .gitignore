@@ -3,3 +3,4 @@
 /package-lock.json
 /venv
 ./db.sqlite
+__pycache__

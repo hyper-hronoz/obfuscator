@@ -4,11 +4,13 @@ import os
 import re
 import base64
 import uuid
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, make_response
 from flask_restful import Api, Resource
 from flask_sqlalchemy import SQLAlchemy
 import smtplib
 import ssl
+import jwt
+from email_validator import validate_email, EmailNotValidError
 
 app = Flask(__name__)
 api = Api(app)
@@ -19,14 +21,31 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-gmail_address = os.environ("gmail_address")
+gmail_address = os.environ["gmail_address"]
 gmail_password = os.environ["gmail_password"]
+
+html_headers = {'Content-Type': 'text/html'}
+json_headers = {'Content-Type': 'application/json'}
+
+class DifferentPasswordsException(Exception):
+    def __init__(self, message="Passwords are different") -> None:
+        super().__init__(message)
+
+class ShortPasswordException(Exception):
+    def __init__(self, message="Password are too shot min 8 symbols") -> None:
+        super().__init__(message)
+
+class LongPasswordException(Exception):
+    def __init__(self, message="Password are too shot max 200 symbols") -> None:
+        super().__init__(message)
 
 
 class Users(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(200))
-    password = db.Column(db.String(200))
+    email = db.Column(db.String(200), nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    registered_on = db.Column(db.DateTime, nullable=False)
+    api_key = db.Column(db.String(400), nullable=True)
 
 
 class Obfuscator(Resource):
@@ -66,64 +85,84 @@ class AdvancedObfuscator(Obfuscator):
         return obfuscated
 
 
-port = 465
 
+class Registration(Resource):
+    def get(self):
+        return make_response(render_template('registration.html'), 200, html_headers)
+
+    def post(self):
+
+        email:str = str(request.form["email"]).strip()
+        password:str = str(request.form["password"]).strip()
+        password_again:str = str(request.form["password_again"]).strip()
+
+        try:
+            valid = validate_email(email)
+            email = valid.email
+
+            if (password != password_again):
+                raise DifferentPasswordsException()
+
+            if len(password) < 8:
+                raise ShortPasswordException()
+
+            if len(password) > 200:
+                raise LongPasswordException()
+
+        except EmailNotValidError as e:
+            return "Invalide email", 401
+        except ShortPasswordException as e:
+            return "Minimal password length 8", 401
+        except LongPasswordException as e:
+            return "Maximal password length 200", 401
+
+        return send_email(email, "link")
+
+class Login(Resource):
+    def get(self):
+        return make_response(render_template('login.html'), 200, html_headers)
+
+    def post(self):
+        email:str = str(request.form["email"]).strip()
+        password:str = str(request.form["password"]).strip()
+
+        try:
+            valid = validate_email(email)
+            email = valid.email
+
+            if len(password) < 8:
+                raise ShortPasswordException()
+
+            if len(password) > 200:
+                raise LongPasswordException()
+
+        except ShortPasswordException as e:
+            return "Minimal password length 8", 401
+        except LongPasswordException as e:
+            return "Maximal password length 200", 401
+
+        return send_email(email, "link")
+
+def send_email(email, token_link):
+    message = MIMEMultipart("alternative")
+    html = str(render_template("email.html", token_link=token_link))
+    message.attach(MIMEText(html, "html"))
+    context = ssl.create_default_context()
+    port = 465
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
+        server.login(gmail_address, gmail_password)
+        server.sendmail(gmail_address, email, message.as_string())
+        return "Email sended"
 
 @app.route("/")
 def index():
     return render_template("index.html")
 
-# ненавижу flask за это почему нельзя было сделать как в node js app.get("/registration", (req, res) => {}) app.post("/registration", (req, res) => {})
-
-
-@app.route("/registration")
-def registration():
-    return render_template("registration.html")
-
-
-@app.route("/login")
-def login():
-    return render_template("login.html")
-
-
-@app.route("/registration", methods=["POST"])
-def regisrate():
-    email = request.form["email"]
-    password = request.form["password"]
-    password_again = request.form["password_again"]
-
-    msg = MIMEMultipart("alternative")
-
-
-        # HTML Message Part
-    html = """\
-    <html>
-    <body>
-        <p><b>Python Mail Test</b>
-        <br>
-        This is HTML email with attachment.<br>
-        Click on <a href="https://fedingo.com">Fedingo Resources</a> 
-        for more python articles.
-        </p>
-    </body>
-    </html>
-    """
-
-    part = MIMEText(html, "html")
-    msg.attach(part)
-
-    context = ssl.create_default_context()
-
-    with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
-        server.login(gmail_address, gmail_password)
-        server.sendmail(gmail_address, email, msg.as_string())
-        print(email, password, password_again)
-        return "Hello"
-
-
 api.add_resource(Obfuscator, "/api/obfuscate")
-api.add_resource(AdvancedObfuscator,
-                 "/api/obfuscate/<code>/<obfuscation_hardness>/<api_key>")
+api.add_resource(AdvancedObfuscator, "/api/obfuscate/<code>/<obfuscation_hardness>/<api_key>")
+api.add_resource(Registration, "/registration")
+api.add_resource(Login, "/login")
 
 if __name__ == '__main__':
     app.run(debug=True)

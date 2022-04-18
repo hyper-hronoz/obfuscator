@@ -1,49 +1,6 @@
-doctype html
-html(lang="en")
-    head
-        meta(charset="UTF-8")
-        meta(http-equiv="X-UA-Compatible", content="IE=edge")
-        meta(name="viewport", content="width=device-width, initial-scale=1.0")
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-        <link href="http://fonts.cdnfonts.com/css/noize-sport-free-vertion" rel="stylesheet">
-        link(rel="stylesheet", href="css/style.css")
-        title Document
-    body 
-        header 
-            .container.header_container
-                nav.navigation
-                    ul.navigation_list
-                        li.navigation_item obfuscator
-                        li.navigation_item api documentation
-                        li.navigation_item login
-                        li.navigation_item registration
+body
+    include ./templates/head.pug
+    include ./templates/header.pug
+    include ./templates/obfuscator.pug
+    include ./templates/instruction.pug
 
-        section.container.main
-            .spinners
-                .spinner.spinner_source
-                    .spinner_item Python
-                button.convert_button.button Convert
-                .spinner.spinner_dist
-                    .spinner_item Obfuscated Python
-            .fieldes 
-                .field 
-                    .field_head
-                        span.field_head-info your code
-                        button.field_head-copy c
-                    //- .field_row-counter
-                    textarea(name="source") 
-                .field 
-                    .field_head
-                        span.field_head-info your obfuscated code
-                        button.field_head-copy c
-                    //- .field_row-counter
-                    textarea(name="dist") 
-           
-        section.container.about
-            h2.about_heading How to use it?
-            ol.about_list
-                li Paste your code 
-                li Wait for server response
-                li Enjoy result

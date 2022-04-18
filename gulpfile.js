@@ -26,11 +26,11 @@ gulp.task("serve", async function () {
 });
 
 gulp.task("pug", async () => {
-  return gulp.src(pug_files).pipe(pug({})).pipe(gulp.dest("./dist"));
+  return gulp.src(pug_files).pipe(pug({pretty: true})).pipe(gulp.dest("./templates"));
 });
 
 gulp.task("image", async () => {
-  gulp.src("./src/img/**/*").pipe(imagemin()).pipe(gulp.dest("./dist/img"));
+  gulp.src("./src/img/**/*").pipe(imagemin()).pipe(gulp.dest("./static/img"));
 });
 
 gulp.task("scss", async () => {
@@ -42,7 +42,7 @@ gulp.task("scss", async () => {
         cascade: false,
       })
     )
-    .pipe(gulp.dest("./dist/css"));
+    .pipe(gulp.dest("./static/css"));
 });
 
 gulp.task("js", async () =>
@@ -54,7 +54,7 @@ gulp.task("js", async () =>
         ignore: [ "./src/js/particles.min.js" ]
       })
     )
-    .pipe(gulp.dest("./dist/js"))
+    .pipe(gulp.dest("./static/js"))
 );
 
 gulp.task("default", gulp.series(gulp_files, "serve"));

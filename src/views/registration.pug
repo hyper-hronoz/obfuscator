@@ -1,0 +1,17 @@
+include ./templates/head.pug
+include ./templates/header.pug
+
+body 
+    section.authorization.container
+        h2.authorization_heading Sign up
+        form.form(action="/registration" method="POST") 
+            .form_row
+                label.form_row-label(for="email") Email
+                input.form_row-input(type="email" id="email" placeholder="email")
+            .form_row
+                label.form_row-label(for="password") password
+                input.form_row-input(type="password" id="password" placeholder="password")
+            .form_row
+                label.form_row-label(for="repeat_password") password again
+                input.form_row-input(type="password" id="repeat_password" placeholder="password")
+            button.button.form_button(type="submit") Sign up

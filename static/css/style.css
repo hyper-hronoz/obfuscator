@@ -1,0 +1,246 @@
+@charset "UTF-8";
+/* Указываем box sizing */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Убираем внутренние отступы */
+ul[class],
+ol[class] {
+  padding: 0;
+}
+
+/* Убираем внешние отступы */
+body,
+h1,
+h2,
+h3,
+h4,
+p,
+ul[class],
+ol[class],
+li,
+figure,
+figcaption,
+blockquote,
+dl,
+dd {
+  margin: 0;
+}
+
+/* Выставляем основные настройки по-умолчанию для body */
+body {
+  min-height: 100vh;
+  scroll-behavior: smooth;
+  text-rendering: optimizeSpeed;
+  line-height: 1.5;
+}
+
+/* Удаляем стандартную стилизацию для всех ul и il, у которых есть атрибут class*/
+ul[class],
+ol[class] {
+  list-style: none;
+}
+
+/* Элементы a, у которых нет класса, сбрасываем до дефолтных стилей */
+a:not([class]) {
+  -webkit-text-decoration-skip: ink;
+  text-decoration-skip-ink: auto;
+}
+
+a {
+  text-decoration: none;
+}
+
+/* Упрощаем работу с изображениями */
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* Указываем понятную периодичность в потоке данных у article*/
+article > * + * {
+  margin-top: 1em;
+}
+
+/* Наследуем шрифты для инпутов и кнопок */
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+textarea {
+  outline: none;
+  border: none;
+}
+
+button {
+  border: none;
+}
+
+/* Удаляем все анимации и переходы для людей, которые предпочитай их не использовать */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    -webkit-animation-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    -webkit-animation-iteration-count: 1 !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+* {
+  font-family: "Roboto", sans-serif;
+}
+
+.button {
+  font-size: 16px;
+  padding: 10px 44px;
+  background: #1668B2;
+  color: #fff;
+  border-radius: 4px;
+}
+
+.container {
+  padding-inline: 33px;
+  margin: 0 auto;
+}
+
+.navigation {
+  margin-bottom: 70px;
+}
+.navigation_list {
+  display: flex;
+  gap: 10px;
+}
+.navigation_item {
+  font-family: "Noize Sport Free Vertion", sans-serif;
+  text-transform: uppercase;
+  font-size: 16px;
+  background: #1668B2;
+  color: #fff;
+  padding: 14px 49px;
+  white-space: nowrap;
+}
+.navigation_item > a {
+  color: #fff;
+}
+.navigation_item:first-child {
+  padding-left: 0;
+  position: relative;
+}
+.navigation_item:first-child::before {
+  content: "";
+  display: block;
+  background: #1668B2;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  left: -100%;
+  top: 0;
+}
+
+.main .spinners {
+  display: flex;
+  justify-content: space-between;
+  gap: 40px;
+  margin-bottom: 23px;
+}
+.main .spinners .spinner {
+  width: 100%;
+  border: #000 1px solid;
+  border-radius: 2px;
+  position: relative;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.main .spinners .spinner::after {
+  content: "";
+  display: inline-block;
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  border: solid #000;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.main .fieldes {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 40px;
+}
+.main .fieldes .field {
+  display: flex;
+  border: 1px solid #000;
+  border-radius: 10px;
+  flex: 1;
+  flex-wrap: nowrap;
+  position: relative;
+  flex-direction: column;
+}
+.main .fieldes .field_head {
+  display: flex;
+  flex: 0 0 auto;
+  height: 35px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 21px;
+  border-bottom: 1px solid #000;
+}
+.main .fieldes .field_head-info {
+  text-transform: uppercase;
+}
+.main .fieldes .field_row-counter {
+  width: 20px;
+  border-right: 1px solid #000;
+  box-sizing: content-box;
+}
+.main .fieldes .field_wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  height: 100%;
+}
+.main .fieldes .field textarea {
+  flex: 1;
+  resize: vertical;
+  box-sizing: content-box;
+  min-height: 521px;
+}
+
+.authorization_heading {
+  text-align: center;
+}
+.authorization .form {
+  display: flex;
+  flex-direction: column;
+  max-width: 441px;
+  margin: auto;
+}
+.authorization .form_row {
+  display: flex;
+  flex-direction: column;
+}
+.authorization .form_row-label {
+  text-transform: uppercase;
+  color: #727272;
+  font-size: 12px;
+}
+.authorization .form_row-input {
+  margin-bottom: 32px;
+  padding: 13px 18px;
+  font-size: 16px;
+  outline: none;
+}
+.authorization .form_button {
+  font-family: "Noize Sport Free Vertion", sans-serif;
+  text-transform: uppercase;
+  font-size: 16px;
+  margin: auto;
+}

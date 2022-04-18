@@ -48,6 +48,10 @@ a:not([class]) {
   text-decoration-skip-ink: auto;
 }
 
+a {
+  text-decoration: none;
+}
+
 /* Упрощаем работу с изображениями */
 img {
   max-width: 100%;
@@ -65,6 +69,11 @@ button,
 textarea,
 select {
   font: inherit;
+}
+
+textarea {
+  outline: none;
+  border: none;
 }
 
 button {

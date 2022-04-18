@@ -1,8 +1,14 @@
-import re, base64, uuid
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import os
+import re
+import base64
+import uuid
 from flask import Flask, render_template, request, jsonify
 from flask_restful import Api, Resource
 from flask_sqlalchemy import SQLAlchemy
-import smtplib, ssl
+import smtplib
+import ssl
 
 app = Flask(__name__)
 api = Api(app)
@@ -13,29 +19,34 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
+gmail_address = os.environ("gmail_address")
+gmail_password = os.environ["gmail_password"]
+
+
 class Users(db.Model):
-   id = db.Column(db.Integer, primary_key=True)
-   email = db.Column(db.String(200))
-   password = db.Column(db.String(200))
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(200))
+    password = db.Column(db.String(200))
 
 
 class Obfuscator(Resource):
 
     def post(self):
         data = request.get_json()
-        obfuscated = {"value" : Obfuscator.obfuscate(data["value"])}
+        obfuscated = {"value": Obfuscator.obfuscate(data["value"])}
         return jsonify(obfuscated)
 
     @staticmethod
     def obfuscate(code):
         code = f"# {uuid.uuid4()} \n" + code + f"# {uuid.uuid4()} \n"
-        encoded = re.findall(r".{1,50}", str(base64.b64encode(str.encode(code)).decode("utf-8")))
+        encoded = re.findall(r".{1,50}", str(
+            base64.b64encode(str.encode(code)).decode("utf-8")))
         python_string = ""
         for i in range(0, len(encoded)):
             if i != 0:
                 python_string += "         "
             python_string += f"b'{encoded[i]}'"
-            if i != len(encoded) - 1: 
+            if i != len(encoded) - 1:
                 python_string += "\\\n"
 
         return str(f"""
@@ -43,6 +54,7 @@ from base64 import b64encode, b64decode
 hidden = {python_string}
 eval(compile(b64decode(hidden.decode()), "<string>", "exec")) 
         """).strip()
+
 
 class AdvancedObfuscator(Obfuscator):
     def get(self, code, obfuscation_hardness, api_key):
@@ -54,29 +66,64 @@ class AdvancedObfuscator(Obfuscator):
         return obfuscated
 
 
+port = 465
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
 
 # ненавижу flask за это почему нельзя было сделать как в node js app.get("/registration", (req, res) => {}) app.post("/registration", (req, res) => {})
+
+
 @app.route("/registration")
 def registration():
     return render_template("registration.html")
 
+
 @app.route("/login")
 def login():
     return render_template("login.html")
+
 
 @app.route("/registration", methods=["POST"])
 def regisrate():
     email = request.form["email"]
     password = request.form["password"]
     password_again = request.form["password_again"]
-    print(email, password, password_again)
-    return "Hello"
+
+    msg = MIMEMultipart("alternative")
+
+
+        # HTML Message Part
+    html = """\
+    <html>
+    <body>
+        <p><b>Python Mail Test</b>
+        <br>
+        This is HTML email with attachment.<br>
+        Click on <a href="https://fedingo.com">Fedingo Resources</a> 
+        for more python articles.
+        </p>
+    </body>
+    </html>
+    """
+
+    part = MIMEText(html, "html")
+    msg.attach(part)
+
+    context = ssl.create_default_context()
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
+        server.login(gmail_address, gmail_password)
+        server.sendmail(gmail_address, email, msg.as_string())
+        print(email, password, password_again)
+        return "Hello"
+
 
 api.add_resource(Obfuscator, "/api/obfuscate")
-api.add_resource(AdvancedObfuscator, "/api/obfuscate/<code>/<obfuscation_hardness>/<api_key>")
+api.add_resource(AdvancedObfuscator,
+                 "/api/obfuscate/<code>/<obfuscation_hardness>/<api_key>")
 
 if __name__ == '__main__':
     app.run(debug=True)

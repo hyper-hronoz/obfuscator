@@ -3,17 +3,26 @@ import re
 import ssl
 import jwt
 import uuid
+import bcrypt
 import base64
 import smtplib
+from datetime import datetime
 from email.mime.text import MIMEText
+from flask_login import LoginManager, UserMixin, current_user, login_required, login_user
 from flask_restful import Api, Resource
 from flask_sqlalchemy import SQLAlchemy
 from email.mime.multipart import MIMEMultipart
-from flask import Flask, render_template, request, jsonify, make_response
+from flask import Flask, render_template, request, jsonify, make_response, redirect, url_for
 
 app = Flask(__name__)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 api = Api(app)
 
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(user_id)
 
 app.jinja_env.auto_reload = True
 app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -56,7 +65,6 @@ class Mailer(Resource):
 
     def send_email(self, email, token_link):
         try:
-            isSuccess = False
             message = MIMEMultipart("alternative")
             html = str(render_template("email.html", jwt=token_link))
             message.attach(MIMEText(html, "html"))
@@ -83,12 +91,12 @@ class Validator:
     def not_okey(self):
         return self.alerts
 
-    def minimalLenght(self, minimal_length=8, message="Password are too shot min {minimal_length} symbols"):
+    def minimal_lenght(self, minimal_length=8, message="Password are too shot min {minimal_length} symbols"):
         if len(self.validate_content) < minimal_length:
             self.alerts.append(message.format(minimal_length=minimal_length))
         return self
 
-    def maximalLenght(self, maximal_length=100, message="Password are too long max {maximal_length} symbols"):
+    def maximal_lenght(self, maximal_length=100, message="Password are too long max {maximal_length} symbols"):
         if len(self.validate_content) > maximal_length:
             self.alerts.append(message.format(maximal_length=maximal_length))
         return self
@@ -99,23 +107,29 @@ class Validator:
             self.alerts.append(message)
         return self
 
-    def isEmpty(self, message="Field is empty"):
+    def is_empty(self, message="Field is empty"):
         if len(self.validate_content) == 0:
             self.alerts.append(message)
         return self
 
-    def isEmail(self, message="Field must content email"):
+    def is_email(self, message="Field must content email"):
         regular = r'([-!#-\'*+/-9=?A-Z^-~]+(\.[-!#-\'*+/-9=?A-Z^-~]+)*|"([]!#-[^-~ \t]|(\\[\t -~]))+")@[0-9A-Za-z]([0-9A-Za-z-]{0,61}[0-9A-Za-z])?(\.[0-9A-Za-z]([0-9A-Za-z-]{0,61}[0-9A-Za-z])?)+'
         if not re.match(regular, self.validate_content):
             self.alerts.append(message)
         return self
 
+    def compare_hash(self, password, password_hashed, message="Login or password is incorrect"):
+        password = str.encode(password)
+        if not bcrypt.checkpw(password, password_hashed):
+            self.alerts.append(message)
+        return self
 
-class Users(db.Model):
+
+class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(200), nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    registered_on = db.Column(db.DateTime, nullable=False)
+    registration_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow())
     api_key = db.Column(db.String(400), nullable=True)
 
 
@@ -147,6 +161,7 @@ eval(compile(b64decode(hidden.decode()), "<string>", "exec"))
 
 
 class AdvancedObfuscator(Obfuscator):
+    @login_required
     def get(self, code, obfuscation_hardness, api_key):
         obfuscated = Obfuscator.obfuscate(code)
 
@@ -172,10 +187,9 @@ class Registration(Resource):
 
             validator = Validator()
 
-            validator.validate(password).isEmpty().minimalLenght().maximalLenght().same([password, password_again])
-            validator.validate(email).isEmpty().isEmail()
+            validator.validate(password).is_empty().minimal_lenght().maximal_lenght().same([password, password_again])
+            validator.validate(email).is_empty().is_email()
 
-            print(validator.alerts)
             if validator.not_okey():
                 return make_response(render_template("registration.html", errors=validator.alerts), 200, html_headers)
 
@@ -187,13 +201,16 @@ class Registration(Resource):
             mailer.send_email(email, "http://127.0.0.1:5000/confirmation/" + token.decode("utf-8"))
 
             if mailer.is_success:
-                pass
+                password_hashed = bcrypt.hashpw(str.encode(password), bcrypt.gensalt())
+                user = User(email=email, password=password_hashed)
+                db.session.add(user)
+                db.session.commit()
+            
+            return make_response(redirect(url_for("login")), 200, html_headers)
 
         except Exception as error:
             print(error)
             return "Internal server error", 500
-
-
 
 
 class Login(Resource):
@@ -208,14 +225,27 @@ class Login(Resource):
         try:
             email: str = str(request.form["email"]).strip()
             password: str = str(request.form["password"]).strip()
+            
+            validator = Validator()
+
+            user = User.query.filter_by(email=email).first()
+
+            validator.validate(password).is_empty().minimal_lenght().maximal_lenght().compare_hash(password, user.password)
+            validator.validate(email).is_empty().is_email()
+
+            if validator.not_okey():
+                return make_response(render_template("login.html", errors=validator.alerts), 200, html_headers)
+
+            login_user(user, remember=True)
 
         except Exception as error:
-            print(error.message())
+            print(error)
             return "Internal server error", 500
 
 
 @app.route("/")
 def index():
+    print(current_user.is_authenticated)
     return render_template("index.html")
 
 

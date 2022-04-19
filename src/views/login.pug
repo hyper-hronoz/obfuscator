@@ -5,10 +5,16 @@ body
     section.authorization.container
         h2.authorization_heading Login
         form.form(action="/login" method="POST") 
+            .form_row.form_errors.mb-2.mt-2
+                | {% if errors %}
+                | {% for error in errors %}
+                span.alert.alert-danger {{ error }}
+                | {% endfor %}
+                | {% endif %}
             .form_row
                 label.form_row-label(for="email") Email
-                input.form_row-input(type="email" id="email" placeholder="email")
+                input.form_row-input(type="email" id="email" placeholder="email" name="email")
             .form_row
                 label.form_row-label(for="password") password
-                input.form_row-input(type="password" id="password" placeholder="password")
+                input.form_row-input(type="password" id="password" placeholder="password" name="password")
             button.button.form_button(type="submit") login

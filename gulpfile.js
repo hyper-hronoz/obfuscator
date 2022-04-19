@@ -5,6 +5,7 @@ const babel = require("gulp-babel");
 const browserSync = require("browser-sync").create();
 const autoprefixer = require("gulp-autoprefixer");
 const imagemin = require('gulp-imagemin')
+const plumber = require('gulp-plumber');
 
 
 const gulp_files = ["pug", "scss", "js"];
@@ -26,7 +27,7 @@ gulp.task("serve", async function () {
 });
 
 gulp.task("pug", async () => {
-  return gulp.src(pug_files).pipe(pug({pretty: true})).pipe(gulp.dest("./templates"));
+  gulp.src(pug_files).pipe(plumber()).pipe(pug({pretty: true})).pipe(gulp.dest("./templates"));
 });
 
 gulp.task("image", async () => {

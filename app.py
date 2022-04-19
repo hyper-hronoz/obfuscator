@@ -14,6 +14,9 @@ from flask import Flask, render_template, request, jsonify, make_response
 app = Flask(__name__)
 api = Api(app)
 
+
+app.jinja_env.auto_reload = True
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SECRET_KEY'] = "hell_bound_in_satan_in_wonderland"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -167,6 +170,15 @@ class Registration(Resource):
             password: str = str(request.form["password"]).strip()
             password_again: str = str(request.form["password_again"]).strip()
 
+            validator = Validator()
+
+            validator.validate(password).isEmpty().minimalLenght().maximalLenght().same([password, password_again])
+            validator.validate(email).isEmpty().isEmail()
+
+            print(validator.alerts)
+            if validator.not_okey():
+                return make_response(render_template("registration.html", errors=validator.alerts), 200, html_headers)
+
             jsonWebToken = JSONWebToken()
 
             token = jsonWebToken.encode({"email": email})
@@ -215,4 +227,4 @@ api.add_resource(Login, "/login")
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=True)

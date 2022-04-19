@@ -3,6 +3,7 @@ from email.mime.text import MIMEText
 import os
 import re
 import base64
+from shutil import ExecError
 import uuid
 from flask import Flask, render_template, request, jsonify, make_response
 from flask_restful import Api, Resource
@@ -27,17 +28,44 @@ gmail_password = os.environ["gmail_password"]
 html_headers = {'Content-Type': 'text/html'}
 json_headers = {'Content-Type': 'application/json'}
 
-class DifferentPasswordsException(Exception):
-    def __init__(self, message="Passwords are different") -> None:
-        super().__init__(message)
 
-class ShortPasswordException(Exception):
-    def __init__(self, message="Password are too shot min 8 symbols") -> None:
-        super().__init__(message)
+class Validator:
+    def __init__(self) -> None:
+        self.alerts = []
 
-class LongPasswordException(Exception):
-    def __init__(self, message="Password are too shot max 200 symbols") -> None:
-        super().__init__(message)
+    def validate(self, string:str):
+        self.validate_content = string.strip()
+        return self
+
+    def not_okey(self):
+        return self.alerts
+
+    def minimalLenght(self, minimal_length = 8, message="Password are too shot min {minimal_length} symbols"):
+        if len(self.validate_content) < minimal_length:
+            self.alerts.append(message.format(minimal_length=minimal_length))
+        return self
+
+    def maximalLenght(self, maximal_length=100, message="Password are too long max {maximal_length} symbols"):
+        if len(self.validate_content) > maximal_length:
+            self.alerts.append(message.format(maximal_length=maximal_length))
+        return self
+
+    def same(self, strings=[], message="Different passwords"):
+        strings = [i.strip() for i in strings]
+        if len(set(strings)) != 1:
+            self.alerts.append(message)
+        return self
+
+    def isEmpty(self, message="Field is empty"):
+        if len(self.validate_content) == 0:
+            self.alerts.append(message)
+        return self
+
+    def isEmail(self, message="Field must content email"):
+        regular = r'([-!#-\'*+/-9=?A-Z^-~]+(\.[-!#-\'*+/-9=?A-Z^-~]+)*|"([]!#-[^-~ \t]|(\\[\t -~]))+")@[0-9A-Za-z]([0-9A-Za-z-]{0,61}[0-9A-Za-z])?(\.[0-9A-Za-z]([0-9A-Za-z-]{0,61}[0-9A-Za-z])?)+'
+        if not re.match(regular, self.validate_content):
+            self.alerts.append(message)
+        return self
 
 
 class Users(db.Model):
@@ -85,63 +113,45 @@ class AdvancedObfuscator(Obfuscator):
         return obfuscated
 
 
-
 class Registration(Resource):
     def get(self):
         return make_response(render_template('registration.html'), 200, html_headers)
 
     def post(self):
-
-        email:str = str(request.form["email"]).strip()
-        password:str = str(request.form["password"]).strip()
-        password_again:str = str(request.form["password_again"]).strip()
-
         try:
             valid = validate_email(email)
             email = valid.email
 
-            if (password != password_again):
-                raise DifferentPasswordsException()
+            email: str = str(request.form["email"]).strip()
+            password: str = str(request.form["password"]).strip()
+            password_again: str = str(request.form["password_again"]).strip()
 
-            if len(password) < 8:
-                raise ShortPasswordException()
+            return send_email(email, "link")
+        except Exception as error:
+            return "Internal server error", 500
 
-            if len(password) > 200:
-                raise LongPasswordException()
-
-        except EmailNotValidError as e:
-            return "Invalide email", 401
-        except ShortPasswordException as e:
-            return "Minimal password length 8", 401
-        except LongPasswordException as e:
-            return "Maximal password length 200", 401
-
-        return send_email(email, "link")
 
 class Login(Resource):
     def get(self):
-        return make_response(render_template('login.html'), 200, html_headers)
+        try:
+            return make_response(render_template('login.html'), 200, html_headers)
+        except Exception as error:
+            print(error.message)
+            return "Internal server error", 500
 
     def post(self):
-        email:str = str(request.form["email"]).strip()
-        password:str = str(request.form["password"]).strip()
-
         try:
+            email: str = str(request.form["email"]).strip()
+            password: str = str(request.form["password"]).strip()
+
             valid = validate_email(email)
             email = valid.email
 
-            if len(password) < 8:
-                raise ShortPasswordException()
+            return send_email(email, "link")
+        except Exception as error:
+            print(error.message)
+            return "Internal server error", 500
 
-            if len(password) > 200:
-                raise LongPasswordException()
-
-        except ShortPasswordException as e:
-            return "Minimal password length 8", 401
-        except LongPasswordException as e:
-            return "Maximal password length 200", 401
-
-        return send_email(email, "link")
 
 def send_email(email, token_link):
     message = MIMEMultipart("alternative")
@@ -155,12 +165,15 @@ def send_email(email, token_link):
         server.sendmail(gmail_address, email, message.as_string())
         return "Email sended"
 
+
 @app.route("/")
 def index():
     return render_template("index.html")
 
+
 api.add_resource(Obfuscator, "/api/obfuscate")
-api.add_resource(AdvancedObfuscator, "/api/obfuscate/<code>/<obfuscation_hardness>/<api_key>")
+api.add_resource(AdvancedObfuscator,
+                 "/api/obfuscate/<code>/<obfuscation_hardness>/<api_key>")
 api.add_resource(Registration, "/registration")
 api.add_resource(Login, "/login")
 

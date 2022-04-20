@@ -1,35 +1,8 @@
 section.container.main
-    //- | {% if not is_confirmed %}
-    //- .alert
-    //-     .alert_message Please confirm your email to use api
-    //-     button.alert_button.button Send email
-    //- | {% endif %}
     | {% if not api_key %}
     .alert
-        .alert_message Please sign up to use api 
-        button.alert_button.button Sign Up
+        .alert_message Please sign up or login to use api 
+        a(href="/registration")
+            button.alert_button.button Sign Up
     | {% endif %}
-    | {% if api_key %}
-    .api_key {{api_key}} 
-    | {% endif %}
-    .spinners
-        .spinner.spinner_source
-            .spinner_item Python
-        button.convert_button.button Convert
-        .spinner.spinner_dist
-            .spinner_item Obfuscated Python
-    .fieldes 
-        .field 
-            .field_head
-                span.field_head-info your code
-                button.field_head-copy c
-            .field_wrapper
-                .field_row-counter
-                textarea(name="source") 
-        .field 
-            .field_head
-                span.field_head-info your obfuscated code
-                button.field_head-copy c
-            .field_wrapper
-                .field_row-counter
-                textarea(name="dist") 
+    include ./main.pug

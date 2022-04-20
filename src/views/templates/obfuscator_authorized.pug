@@ -1,0 +1,10 @@
+section.container.main
+    | {% if api_key %}
+    .api_key {{api_key}} 
+    | {% endif %}
+    | {% if not api_key %}
+    .alert
+        .alert_message Please confirm your email
+        button.alert_button.button Confirm
+    | {% endif %}
+    include ./main.pug

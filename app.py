@@ -10,7 +10,7 @@ import smtplib
 import traceback
 from datetime import datetime
 from email.mime.text import MIMEText
-from flask_login import LoginManager, UserMixin, current_user, login_required, login_user
+from flask_login import LoginManager, UserMixin, current_user, login_required, login_user, logout_user
 from flask_restful import Api, Resource
 from flask_sqlalchemy import SQLAlchemy
 from email.mime.multipart import MIMEMultipart
@@ -291,11 +291,16 @@ def index():
     if current_user.is_authenticated:
         user = User.query.filter_by(email=current_user.email).first()
         if user.api_key:
-            return render_template("index.html", api_key=f"api key = {user.api_key}")
+            return render_template("index_authorized.html", api_key=f"api key = {user.api_key}")
         else:
-            return render_template("index.html", api_key=f"Please confirm your email to use api")
+            return render_template("index_authorized.html")
     return render_template("index.html")
 
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect("/")
 
 api.add_resource(Obfuscator, "/api/obfuscate")
 api.add_resource(AdvancedObfuscator, "/api/obfuscate/<code>/<obfuscation_hardness>/<api_key>")

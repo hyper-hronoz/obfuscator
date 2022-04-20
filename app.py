@@ -129,9 +129,11 @@ class Mailer(Resource):
             jsonWebToken = JSONWebToken()
             email = jsonWebToken.decode(jwt)["email"]
             user = User.query.filter_by(email=email).first()
-            user.api_key = base64.b64encode(str.encode(str(uuid.uuid4()))).decode("utf-8")
-            db.session.commit()
-            return make_response(render_template("congratulations.html"), 200, html_headers)
+            if not user.api_key:
+                user.api_key = base64.b64encode(str.encode(str(uuid.uuid4()))).decode("utf-8")
+                db.session.commit()
+                return make_response(render_template("congratulations.html"), 200, html_headers)
+            return "Your already used this email"
         except Exception as error:
             print(error)
             print(traceback.format_exc())

@@ -46,8 +46,22 @@ import jwt
 
 # print(validator.alerts)
 
+class app:
+    config = {}
+
+app.config["JWT_SECRET_KEY"] = "HELLO"
+
+class JSONWebToken:
+    def __init__(self) -> None:
+        pass
+
+    def encode(self, data):
+        return jwt.encode(data, app.config["JWT_SECRET_KEY"], algorithm="HS256")
+
+    def decode(self, token):
+        return jwt.decode(token, app.config["JWT_SECRET_KEY"], algorithms=["HS256"])
 
 
 jsonWebToken = JSONWebToken()
 token = jsonWebToken.encode({"Hello": "There"})
-jsonWebToken.decode(token)
+print(jsonWebToken.decode(token)["Hello"])

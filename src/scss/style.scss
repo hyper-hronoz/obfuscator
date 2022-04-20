@@ -1,5 +1,7 @@
 @import "./style_reset.scss";
 
+$danger: #f8d7da;
+$blood: #721c24;
 $primary_color: #1668B2;
 $secondary_color: #727272;
 $dark: #000;
@@ -59,6 +61,26 @@ $light: #fff;
         }
     }
 }
+
+.alert {
+    color: $blood;
+    background-color: $danger;
+    padding: 15px 26px;
+    display: flex;
+    align-items: center;
+    margin-bottom: 40px;
+
+    > * {
+        margin-right: 20px;
+    }
+}
+
+.api_key {
+    color: $dark;
+    margin: 40px 0;
+    font-size: 24px;
+}
+
 
 .main {
     .spinners {

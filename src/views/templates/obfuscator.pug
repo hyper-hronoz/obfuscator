@@ -1,4 +1,17 @@
 section.container.main
+    //- | {% if not is_confirmed %}
+    //- .alert
+    //-     .alert_message Please confirm your email to use api
+    //-     button.alert_button.button Send email
+    //- | {% endif %}
+    | {% if not api_key %}
+    .alert
+        .alert_message Please sign up to use api 
+        button.alert_button.button Sign Up
+    | {% endif %}
+    | {% if api_key %}
+    .api_key {{api_key}} 
+    | {% endif %}
     .spinners
         .spinner.spinner_source
             .spinner_item Python

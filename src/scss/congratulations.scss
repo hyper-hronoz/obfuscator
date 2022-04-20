@@ -1,0 +1,18 @@
+/* basic styles for black background and crosshair cursor */
+body {
+	background: #000;
+	margin: 0;
+    overflow: hidden;
+}
+
+canvas {
+	cursor: crosshair;
+	display: block;
+}
+
+h1 {
+    z-index: 10000;
+    color: #fff;
+    text-align: center;
+    font-family: "Roboto", sance-serif;
+}

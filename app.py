@@ -1,11 +1,13 @@
 import os
 import re
+from shutil import ExecError
 import ssl
 import jwt
 import uuid
 import bcrypt
 import base64
 import smtplib
+import traceback
 from datetime import datetime
 from email.mime.text import MIMEText
 from flask_login import LoginManager, UserMixin, current_user, login_required, login_user
@@ -20,15 +22,18 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 api = Api(app)
 
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(user_id)
 
+
 app.jinja_env.auto_reload = True
-app.config['TEMPLATES_AUTO_RELOAD'] = True
-app.config['SECRET_KEY'] = "hell_bound_in_satan_in_wonderland"
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.config["SECRET_KEY"] = "hell_bound_in_satan_in_wonderland"
+app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///db.sqlite'
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["JWT_SECRET_KEY"] = "lfdfqyfkbdfqgjujdjhbvj;bpyb"
 
 db = SQLAlchemy(app)
 
@@ -39,45 +44,25 @@ html_headers = {'Content-Type': 'text/html'}
 json_headers = {'Content-Type': 'application/json'}
 
 
+class Network:
+    protocol = "http"
+    host = "127.0.0.1"
+    port = 5000
+
+    @staticmethod
+    def generate_query(route):
+        return f"{Network.protocol}://{Network.host}:{Network.port}/{route}/"
+
+
 class JSONWebToken:
     def __init__(self) -> None:
         pass
 
     def encode(self, data):
-        return jwt.encode(data, "secret", algorithm="HS256")
+        return jwt.encode(data, app.config["JWT_SECRET_KEY"], algorithm="HS256")
 
     def decode(self, token):
-        return jwt.decode(token, "secret", algorithms=["HS256"])
-
-
-class Mailer(Resource):
-    def __init__(self) -> None:
-        self.is_success = False
-        super().__init__()
-
-    def get(self, jwt):
-        try:
-            print(jwt)
-        except Exception as error:
-            print(error.message())
-            return "Internal server error", 500
-
-
-    def send_email(self, email, token_link):
-        try:
-            message = MIMEMultipart("alternative")
-            html = str(render_template("email.html", jwt=token_link))
-            message.attach(MIMEText(html, "html"))
-            context = ssl.create_default_context()
-            port = 465
-
-            with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
-                server.login(gmail_address, gmail_password)
-                server.sendmail(gmail_address, email, message.as_string())
-
-            self.is_success = True
-        except Exception as e:
-            print(e)
+        return jwt.decode(token, app.config["JWT_SECRET_KEY"], algorithms=["HS256"])
 
 
 class Validator:
@@ -129,8 +114,58 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(200), nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    registration_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow())
+    registration_time = db.Column(
+        db.DateTime, nullable=False, default=datetime.utcnow())
     api_key = db.Column(db.String(400), nullable=True)
+
+
+class Mailer(Resource):
+    def __init__(self) -> None:
+        self.is_success = False
+        super().__init__()
+
+    def get(self, jwt):
+        try:
+            jsonWebToken = JSONWebToken()
+            email = jsonWebToken.decode(jwt)["email"]
+            user = User.query.filter_by(email=email).first()
+            user.api_key = base64.b64encode(str.encode(str(uuid.uuid4()))).decode("utf-8")
+            db.session.commit()
+            return make_response(render_template("congratulations.html"), 200, html_headers)
+        except Exception as error:
+            print(error)
+            print(traceback.format_exc())
+            return "Internal server error", 500
+
+    @login_required
+    def put(self):
+        try:
+            jsonWebToken = JSONWebToken()
+            token = jsonWebToken.encode({"email": current_user.email})
+            self.send_email(current_user.email, Network.generate_query(
+                "/confirmation") + token.decode("utf-8"))
+        except Exception as error:
+            print(error)
+            print(traceback.format_exc())
+            return "Internal server error", 500
+
+    def send_email(self, email, token_link):
+        try:
+            message = MIMEMultipart("alternative")
+            html = str(render_template("email.html", jwt=token_link))
+            message.attach(MIMEText(html, "html"))
+            context = ssl.create_default_context()
+            port = 465
+
+            with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
+                server.login(gmail_address, gmail_password)
+                server.sendmail(gmail_address, email, message.as_string())
+
+            self.is_success = True
+        except Exception as error:
+            print(error)
+            print(traceback.format_exc())
+            return "Internal server error", 500
 
 
 class Obfuscator(Resource):
@@ -161,7 +196,6 @@ eval(compile(b64decode(hidden.decode()), "<string>", "exec"))
 
 
 class AdvancedObfuscator(Obfuscator):
-    @login_required
     def get(self, code, obfuscation_hardness, api_key):
         obfuscated = Obfuscator.obfuscate(code)
 
@@ -187,7 +221,8 @@ class Registration(Resource):
 
             validator = Validator()
 
-            validator.validate(password).is_empty().minimal_lenght().maximal_lenght().same([password, password_again])
+            validator.validate(password).is_empty().minimal_lenght(
+            ).maximal_lenght().same([password, password_again])
             validator.validate(email).is_empty().is_email()
 
             if validator.not_okey():
@@ -198,15 +233,17 @@ class Registration(Resource):
             token = jsonWebToken.encode({"email": email})
 
             mailer = Mailer()
-            mailer.send_email(email, "http://127.0.0.1:5000/confirmation/" + token.decode("utf-8"))
+            mailer.send_email(email, Network.generate_query(
+                "/confirmation") + token.decode("utf-8"))
 
             if mailer.is_success:
-                password_hashed = bcrypt.hashpw(str.encode(password), bcrypt.gensalt())
+                password_hashed = bcrypt.hashpw(
+                    str.encode(password), bcrypt.gensalt())
                 user = User(email=email, password=password_hashed)
                 db.session.add(user)
                 db.session.commit()
-            
-            return make_response(redirect(url_for("login")), 200, html_headers)
+
+            return make_response(redirect(url_for("login")))
 
         except Exception as error:
             print(error)
@@ -225,18 +262,24 @@ class Login(Resource):
         try:
             email: str = str(request.form["email"]).strip()
             password: str = str(request.form["password"]).strip()
-            
+
             validator = Validator()
 
             user = User.query.filter_by(email=email).first()
 
-            validator.validate(password).is_empty().minimal_lenght().maximal_lenght().compare_hash(password, user.password)
+            if not user:
+                return "Login or password are incorrect!"
+
+            validator.validate(password).is_empty().minimal_lenght(
+            ).maximal_lenght().compare_hash(password, user.password)
             validator.validate(email).is_empty().is_email()
 
             if validator.not_okey():
                 return make_response(render_template("login.html", errors=validator.alerts), 200, html_headers)
 
             login_user(user, remember=True)
+
+            return make_response(redirect("/"))
 
         except Exception as error:
             print(error)
@@ -245,7 +288,12 @@ class Login(Resource):
 
 @app.route("/")
 def index():
-    print(current_user.is_authenticated)
+    if current_user.is_authenticated:
+        user = User.query.filter_by(email=current_user.email).first()
+        if user.api_key:
+            return render_template("index.html", api_key=f"api key = {user.api_key}")
+        else:
+            return render_template("index.html", api_key=f"Please confirm your email to use api")
     return render_template("index.html")
 
 

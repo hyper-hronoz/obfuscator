@@ -302,6 +302,10 @@ def index():
             return render_template("index_authorized.html")
     return render_template("index.html")
 
+@app.route("/documentation")
+def documentation():
+    return render_template("documentation.html")
+
 @app.route("/logout")
 @login_required
 def logout():

@@ -49,7 +49,10 @@ a:not([class]) {
 }
 
 a {
-  text-decoration: none;
+  text-decoration: none !important;
+  &:hover {
+    color: unset !important;
+  }
 }
 
 /* Упрощаем работу с изображениями */

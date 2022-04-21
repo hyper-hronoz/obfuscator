@@ -1,5 +1,9 @@
-npm i
-python -m venv venv
-venv\Scripts\activate
-python app.py
-gulp
+
+## How to run
+
+- npm i
+- python -m venv venv
+- gulp
+- venv\Scripts/activate
+- gulp
+

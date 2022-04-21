@@ -1,5 +1,5 @@
 # import re
-import jwt
+# import jwt
 
 
 # class Validator:
@@ -46,22 +46,30 @@ import jwt
 
 # print(validator.alerts)
 
-class app:
-    config = {}
+# class app:
+#     config = {}
 
-app.config["JWT_SECRET_KEY"] = "HELLO"
+# app.config["JWT_SECRET_KEY"] = "HELLO"
 
-class JSONWebToken:
-    def __init__(self) -> None:
-        pass
+# class JSONWebToken:
+#     def __init__(self) -> None:
+#         pass
 
-    def encode(self, data):
-        return jwt.encode(data, app.config["JWT_SECRET_KEY"], algorithm="HS256")
+#     def encode(self, data):
+#         return jwt.encode(data, app.config["JWT_SECRET_KEY"], algorithm="HS256")
 
-    def decode(self, token):
-        return jwt.decode(token, app.config["JWT_SECRET_KEY"], algorithms=["HS256"])
+#     def decode(self, token):
+#         return jwt.decode(token, app.config["JWT_SECRET_KEY"], algorithms=["HS256"])
 
 
-jsonWebToken = JSONWebToken()
-token = jsonWebToken.encode({"Hello": "There"})
-print(jsonWebToken.decode(token)["Hello"])
+# jsonWebToken = JSONWebToken()
+# token = jsonWebToken.encode({"Hello": "There"})
+# print(jsonWebToken.decode(token)["Hello"])
+
+
+from base64 import b64encode, b64decode
+hidden = b'IyBmNThlNzI4Yi03MmIxLTRkMmEtODA2Yy1kNzAxYTUyODY3Nz'\
+         b'YgCnByaW50KCJIZWxsbyB3b3JsZCIpIyA4OTU3MDM3Zi1mNmNi'\
+         b'LTRhNTItODUyZi1jZGE0MjQ2ZDg3ZjMgCg=='
+eval(compile(b64decode(hidden.decode()), "<string>", "exec"))
+

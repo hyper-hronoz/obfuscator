@@ -4,7 +4,7 @@ section.container.main
     | {% endif %}
     | {% if not api_key %}
     .alert
-        .alert_message Please confirm your email
-        button.alert_button.button Confirm
+        .alert_message.confirm_message Please confirm your email
+        button.alert_button.button.confirm_button Confirm
     | {% endif %}
     include ./main.pug

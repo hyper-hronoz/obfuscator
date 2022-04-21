@@ -140,7 +140,7 @@ class Mailer(Resource):
             return "Internal server error", 500
 
     @login_required
-    def put(self):
+    def put(self, jwt):
         try:
             jsonWebToken = JSONWebToken()
             token = jsonWebToken.encode({"email": current_user.email})
@@ -199,12 +199,15 @@ eval(compile(b64decode(hidden.decode()), "<string>", "exec"))
 
 class AdvancedObfuscator(Obfuscator):
     def get(self, code, obfuscation_hardness, api_key):
-        obfuscated = Obfuscator.obfuscate(code)
+        user = User.query.filter_by(api_key=api_key).first()
+        if user:
+            obfuscated = Obfuscator.obfuscate(code)
 
-        for i in range(int(obfuscation_hardness)):
-            obfuscated = Obfuscator.obfuscate(obfuscated)
+            for i in range(int(obfuscation_hardness)):
+                obfuscated = Obfuscator.obfuscate(obfuscated)
 
-        return obfuscated
+            return obfuscated
+        return "access denied 403"
 
 
 class Registration(Resource):
@@ -244,8 +247,9 @@ class Registration(Resource):
                 user = User(email=email, password=password_hashed)
                 db.session.add(user)
                 db.session.commit()
-
-            return make_response(redirect(url_for("login")))
+                return make_response(redirect(url_for("login")))
+            else:
+                return make_response(render_template("registration.html", errors=["Internal server error try again laiter"]), 200, html_headers)
 
         except Exception as error:
             print(error)
@@ -270,7 +274,7 @@ class Login(Resource):
             user = User.query.filter_by(email=email).first()
 
             if not user:
-                return "Login or password are incorrect!"
+                return make_response(render_template("login.html", errors=["Login or password are incorrect"]), 200, html_headers)
 
             validator.validate(password).is_empty().minimal_lenght(
             ).maximal_lenght().compare_hash(password, user.password)
@@ -303,6 +307,10 @@ def index():
 def logout():
     logout_user()
     return redirect("/")
+
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template('404.html'), 404
 
 api.add_resource(Obfuscator, "/api/obfuscate")
 api.add_resource(AdvancedObfuscator, "/api/obfuscate/<code>/<obfuscation_hardness>/<api_key>")
